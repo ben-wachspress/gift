@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Etch A Sketch</title>
+  <style>
+    body {
+      font-family: cursive, sans-serif, 'Comic Sans MS';
+      background-color: #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .etch-container {
+      background-color: #cc0000;
+      border-radius: 30px;
+      padding: 40px 20px;
+      box-shadow: inset -8px -8px 20px rgba(255,255,255,0.2),
+                  inset 8px 8px 20px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    h1 {
+      color: white;
+      font-size: 36px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px #000;
+    }
+
+    #controls {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 14px;
+      border: none;
+      background-color: #fff;
+      color: #333;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #eee;
+    }
+
+    .active {
+      background-color: darkred !important;
+      color: white;
+    }
+
+    input[type="color"] {
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #grid {
+      display: grid;
+      width: 800px;
+      height: 600px;
+      background: #eee;
+      border: 6px inset #999;
+      border-radius: 10px;
+    }
+
+    .cell {
+      background-color: white;
+    }
+
+    /* Virtual knobs */
+    .knob {
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, #ccc, #999);
+      border: 4px solid #888;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 20px;
+    }
+
+    .knob.left {
+      left: 40px;
+    }
+
+    .knob.right {
+      right: 40px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="etch-container">
+    <h1>Etch A Sketch</h1>
+
+    <div id="controls">
+      <button onclick="clearGrid()">Clear</button>
+      <button id="eraserBtn" onclick="toggleEraser()">Eraser</button>
+      <button onclick="saveAsPNG()">Save as PNG</button>
+      <input type="color" id="colorPicker" value="#333333" />
+    </div>
+
+    <div id="grid"></div>
+    <canvas id="captureCanvas" width="800" height="600" style="display: none;"></canvas>
+
+    <div class="knob left"></div>
+    <div class="knob right"></div>
+  </div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const colorPicker = document.getElementById("colorPicker");
+    const eraserBtn = document.getElementById("eraserBtn");
+    const canvas = document.getElementById("captureCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const gridSize = 100;
+    const gridWidth = 800;
+    const gridHeight = 600;
+    const cellWidth = gridWidth / gridSize;
+    const cellHeight = gridHeight / gridSize * (800 / 600); // Adjust height scale
+    let drawColor = colorPicker.value;
+    let isDrawing = false;
+    let eraserMode = false;
+
+    colorPicker.addEventListener("input", () => {
+      drawColor = colorPicker.value;
+    });
+
+    function createGrid() {
+      grid.innerHTML = '';
+      grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+      grid.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+      for (let i = 0; i < gridSize * gridSize; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+
+        cell.addEventListener("mousedown", () => {
+          isDrawing = true;
+          cell.style.backgroundColor = eraserMode ? 'white' : drawColor;
+        });
+
+        cell.addEventListener("mouseenter", () => {
+          if (isDrawing) {
+            cell.style.backgroundColor = eraserMode ? 'white' : drawColor;
+          }
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function clearGrid() {
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.style.backgroundColor = 'white';
+      });
+    }
+
+    function toggleEraser() {
+      eraserMode = !eraserMode;
+      eraserBtn.classList.toggle('active', eraserMode);
+      eraserBtn.textContent = `Eraser: ${eraserMode ? 'On' : 'Off'}`;
+    }
+
+    function saveAsPNG() {
+      const cells = document.querySelectorAll('.cell');
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const index = y * gridSize + x;
+          const color = window.getComputedStyle(cells[index]).backgroundColor;
+          ctx.fillStyle = color;
+          ctx.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+        }
+      }
+      const link = document.createElement('a');
+      link.download = 'etch-a-sketch.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    document.body.addEventListener("mouseup", () => {
+      isDrawing = false;
+    });
+
+    createGrid();
+  </script>
+</body>
+</html>
